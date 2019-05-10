@@ -1,27 +1,35 @@
 # A Documents Management Service with Node.js, Docker and MongoDB
 
-This is an example of how to build and deploy multiple Node.js services on Docker containers: the architecture is shown in Image 1.
+This is an example of how to build and deploy multiple Node.js services on Docker containers: the architecture is shown in the next Image.
+
 ![GitHub Logo](/resources/images/architecture.png)
-A simple Node.js server, 'batch server', written in pure javascript, keeps on pooling the updated version of a .json from another service, from now on 'external server', and stores the updates on a MongoDB database (let's call it simply 'database'). Those 3 services are deployed each on its own Docker container and communicate over a dedicated Docker network. No Containers Orchestrator is used (not even 'docker-compose', because sometimes you can't even use that). You may want to fork and extend this work with 'how to orchestrate with Kubernetes', 'how to deploy on GCP', 'how to deploy on OpenShift' etc.
 
-This tutorial is intended both as a starting point and reference for troubleshooting with Node, Docker, Mongo etc. technologies.
-Since the code has much more comments than usual production code, just read it and ask me anything (it's not that hard to find my email if you are reading this tutorial on github, otherwise this material has been stolen and you should call 911 (Should I tell you the number?)).
+A simple Node.js server (from now on 'batch server'), written in javascript, keeps on pooling the updated version of a .json from another service (from now on 'external server') and stores the updates on a MongoDB database ('database'). Those 3 services are deployed each on its own Docker container and communicate over a dedicated Docker network. No containers' orchestrator is used (not even 'docker-compose', because sometimes you can't even use that). You may want to fork and extend this work with 'how to orchestrate with Kubernetes', 'how to deploy on GCP', 'how to deploy on OpenShift' etc.
 
-After the first part where I introduce the services implemented and the dependencies you need to satisfy, there are 2 main sections: 'Simple Tutorials' and 'Miscellanea'. The former is a series of 'how to' related to Docker, Mongo etc, while the latter is docker-composed (haha, don't you think this is funny?) by some tips that I learnt during the implementation of the whole stuff.
+This tutorial is intended both as a starting point and as a reference for troubleshooting with Node, Docker, Mongo etc. technologies.
+Since the code has much more comments than usual production code, just read it and ask me anything (open an issue, or alternatively it's not that hard to find my email if you are reading this tutorial on github, unless this material has been stolen so you should call 911 (Should I tell you the number?)).
 
-I've almost ready some other spin-offs of this tutorial, still I may need some hours of work to make them 'pretty': if I receive messages where I'm asked to do 'x' and 'x' is almost ready, I will add it to this page. The 'almost-pretty' extensions are:
-- managing the containers with 'docker-compose' command
-- managing the whole delivery-deployment process with 'Jenkins'
+In the first part are introduce the services implemented and the dependencies you need to satisfy to run them, then 2 sections follow: 'Simple Tutorials' and 'Miscellanea'. The former is a series of 'how to' related to Docker, Mongo etc, while the latter is docker-composed (haha, don't you think this is funny?) by some tips that I learnt during the implementation of the whole stuff.
+
+I've ready some other spin-offs of this tutorial, still I may need some hours of work to make them 'pretty': if I receive messages where I'm asked to do 'x' and 'x' is almost ready, I will add it to this page. The 'almost-pretty' extensions are:
+- managing the containers with 'docker-compose' command;
+- managing the whole delivery-deployment process with 'Jenkins';
+- managind the deploy on GCP or other clouds (like IBM Cloud or AWS) with some orchestrator like Kubernetes.
 
 
-### Services Implemented so far 05/2019)
+### Services Implemented so far 05/2019
 - batch server:
-  - authentication with 'external server' (secrets + timestamp)
+  - authentication with 'external server' (double secret + timestamp)
   - download of each single document that 'external server' exposes
+  - high availability
 - external server:
-  - authentication with 'batch server' (secrets + timestamp)
+  - authentication with 'batch server' (double secret + timestamp)
   - exposure of APIs REST to download the .json with the documents' list, and each single document (given the document's id)
   - automatic update/clean of documents that are not up to date/not used anymore
+  - high availability
+- database server:
+  - persistent data
+  - high availability
 
 Those modules have dependencies: to manage them, keep on reading.
 
@@ -41,8 +49,8 @@ npm install <nome_package>
 The package will be installed in 'node_modules' folder and will be available through the javascript command 'require('<nome_package>')'. You may want to use also the npm option '-g' (global): in that case, read the documentation.
 
 ### Section 1, Simple Tutorials
-- <a href="#11-creare-un-container-docker-e-far-comunicare-sistema-batch-e-mockup-server-windowslinux-ubuntu">1.1 Create a Docker containers and make them communicate (Windows/Linux)</a>;
-- <a href="#12-gestire-container-senza-docker-compose-linux-ubuntu">1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux Ubuntu)</a>
+- <a href="#11-creare-un-container-docker-e-far-comunicare-sistema-batch-e-mockup-server-windowslinux">1.1 Create a Docker containers and make them communicate (Windows/Linux)</a>;
+- <a href="#12-gestire-container-senza-docker-compose-linux">1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux)</a>
 - <a href="#13-deploy-dei-container-su-rete-privata-attenzione-binding-dellip-di-mongo-da-settare-su-un-unico-valore">1.3 Deploy on a dedicated Docker network</a>
 - <a href="#14-container-con-servizi-in-massima-affidabilit%C3%A0-max-availability">1.4 Containers in 'max availability mode'</a> 
 
@@ -55,7 +63,7 @@ The package will be installed in 'node_modules' folder and will be available thr
 ## 1. Simple Tutorials 
 
 ### 1.1 Create a Docker containers and make them communicate (Windows/Linux)
-Downlaod and install Docker for Windows and/or for Liunx: for the former, you can use the official link (e.g. on Windows 10 go here https://runnable.com/docker/install-docker-on-windows-10), while for Linux you can use your favourite package manager (e.g. on Ubuntu a 'apt-get install docker' is enough), or again install it from source.
+Download and install Docker for Windows and/or for Liunx: for the former, you can use the official link (e.g. on Windows 10 go here https://runnable.com/docker/install-docker-on-windows-10), while for Linux you can use your favourite package manager (e.g. on Ubuntu a 'apt-get install docker' is enough), or again install it from source.
 
 Create a 'Dockerfile' (it is a plaintext) with no extension with this content:
 ```
@@ -150,9 +158,9 @@ Once you have started the 3 services, they communicate over the 'host' network. 
 If everything goes well, you can check that at '127.0.0.1:<service_port>/' both batch and external server will reply to your HTTP GET (just use a browser to navigate to the localhost).
 
 
-### 1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux Ubuntu)
+### 1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux)
 This section explains how to create Docker's images (they are exportable to any other system with Docker). 
-Move into each directory that you want to 'dockerize', and launch the following commands:
+Open a shell and move into each project directory that you want to 'dockerize', and launch the following commands:
 ```
 docker build -t batch_server ./batch_server/
 docker build -t mongodb ./database/
@@ -161,16 +169,16 @@ docker build -t external_server ./external_server/
 
 If you want you can create .tar archives for each image.
 ```
-sudo docker image save -o batch_server.tar batch_server:latest
-sudo docker image save -o external_server.tar external_server:latest 
-sudo docker image save -o mongo.tar mongodb:latest
+ docker image save -o batch_server.tar batch_server:latest
+ docker image save -o external_server.tar external_server:latest 
+ docker image save -o mongo.tar mongodb:latest
 ```
 
-If you want to export an image into your Docker's environment, untar each image into a folder (let's say 'export') and launch the command:
+If you want to export an image into your Docker's environment, untar each image into a folder (let's say '/export') and launch the commands:
 ```
-sudo docker load -i external_server.tar 
-sudo docker load -i batch_server.tar 
-sudo docker load -i mongo.tar 
+ docker load -i external_server.tar 
+ docker load -i batch_server.tar 
+ docker load -i mongo.tar 
 ```
 
 Let's create the persistent volume for the db
@@ -180,32 +188,32 @@ docker volume create mongodbdata
 
 Let's run the images
 ```
-sudo docker run -it --rm --name mongodb -p 27017:27017 --network host -v mongodbdata:/data/db mongodb 
-sudo docker run -it --rm --name external_server --network host external_server
-sudo docker run -it --rm --name batch_server --network host batch_server
+ docker run -it --rm --name mongodb -p 27017:27017 --network host -v mongodbdata:/data/db mongodb 
+ docker run -it --rm --name external_server --network host external_server
+ docker run -it --rm --name batch_server --network host batch_server
 ```
 
 
 ### 1.3 Deploy on a dedicated Docker network
-- add the following line to mongo 'Dockerfile' if not present:
+- add the following line to 'database' 'Dockerfile' if not present:
   ```
   CMD ["--bind_ip", "0.0.0.0"] 
   ```
 
 - create a dedicated network:
   ```
-  sudo docker network create mynet
+   docker network create mynet
   ```
 
 - create the images and launch them on the private network
   ```
-  sudo docker run -it --rm --name mongodb --network bridge -v mongodbdata:/data/db mongodb
+   docker run -it --rm --name mongodb --network bridge -v mongodbdata:/data/db mongodb
   ```
   dove -v indica il volume persistente creato con 'docker creare volume mongodbdata'
 
 - adding mongo to 'mynet' network:
   ```
-  sudo docker network connect mynet mongodb --alias mongodb
+   docker network connect mynet mongodb --alias mongodb
   ```
 
   Obviously you can also run the container natively on the 'mynet' network.
@@ -214,12 +222,12 @@ sudo docker run -it --rm --name batch_server --network host batch_server
 
 - you can launch the two other services in the same way:
   ```
-  sudo docker run -it --rm --name external_server --network mynet  external_server
+   docker run -it --rm --name external_server --network mynet  external_server
   ```
 
 - lanciare il batch server con il seguente comando:
   ```
-  sudo docker run -it --rm --name batch_server --network mynet  --link mongodb batch_server
+   docker run -it --rm --name batch_server --network mynet  --link mongodb batch_server
   ```
 
 
