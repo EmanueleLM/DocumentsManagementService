@@ -1,0 +1,17 @@
+{
+  "name": "batch_server",
+  "version": "1.0.0",
+  "description": "batch server",
+  "main": "batch_server.js",
+  "scripts": {
+    "start": "forever --minUptime 5000 --spinSleepTime 3000 batch_server.js"
+  },
+  "author": "ELM",
+  "license": "ISC",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "express": "^4.16.4",
+    "mongodb": "^3.1.13",
+    "node-fetch": "^2.3.0"
+  }
+}

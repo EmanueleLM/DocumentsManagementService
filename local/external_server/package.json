@@ -1,0 +1,15 @@
+{
+  "name": "external_server",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "external_server.js",
+  "scripts": {
+    "start": "node external_server.js"
+  },
+  "author": "ELM",
+  "license": "ISC",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "express": "^4.16.4"
+  }
+}
