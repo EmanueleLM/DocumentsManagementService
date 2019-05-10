@@ -1,7 +1,7 @@
 # A Documents Management Service with Node.js, Docker and MongoDB
 
 This is an example of how to build and deploy multiple Node.js services on Docker containers: the architecture is shown in Image 1.
-<img src="" />
+![GitHub Logo](/resources/images/architecture.png)
 A simple Node.js server, 'batch server', written in pure javascript, keeps on pooling the updated version of a .json from another service, from now on 'external server', and stores the updates on a MongoDB database (let's call it simply 'database'). Those 3 services are deployed each on its own Docker container and communicate over a dedicated Docker network. No Containers Orchestrator is used (not even 'docker-compose', because sometimes you can't even use that). You may want to fork and extend this work with 'how to orchestrate with Kubernetes', 'how to deploy on GCP', 'how to deploy on OpenShift' etc.
 
 This tutorial is intended both as a starting point and reference for troubleshooting with Node, Docker, Mongo etc. technologies.
