@@ -1,17 +1,19 @@
 # A Documents Management Service with Node.js, Docker and MongoDB
 
-This is an example of how to build and deploy multiple Node.js services on Docker containers: the architecture is shown in the next Image.
+TLDR: check this code if you want to build and deploy multiple Node.js services on Docker containers: the example architecture is shown in the next Image.
 
 ![GitHub Logo](/resources/images/architecture.png)
 
-A simple Node.js server (from now on 'batch server'), written in javascript, keeps on pooling the updated version of a .json from another service (from now on 'external server') and stores the updates on a MongoDB database ('database'). Those 3 services are deployed each on its own Docker container and communicate over a dedicated Docker network. No containers' orchestrator is used (not even 'docker-compose', because sometimes you can't even use that). You may want to fork and extend this work with 'how to orchestrate with Kubernetes', 'how to deploy on GCP', 'how to deploy on OpenShift' etc.
+A simple Node.js server (from now on 'batch server'), written in javascript, keeps on asking for the updated version of a .json from another external service (from now on 'external server') hence stores the updated .json on a MongoDB database (I guess I can call it 'database'). Those 3 services are deployed each on its own Docker container and communicate over a dedicated Docker network. No orchestrator is used: not even 'docker-compose', because sometimes you can't even do that. 
+You may want to fork and extend this work with 'how to orchestrate with Kubernetes', 'how to deploy on GCP', 'how to deploy on OpenShift' etc: drop me a message if you are interested.
 
 This tutorial is intended both as a starting point and as a reference for troubleshooting with Node, Docker, Mongo etc. technologies.
-Since the code has much more comments than usual production code, just read it and ask me anything (open an issue, or alternatively it's not that hard to find my email if you are reading this tutorial on github, unless this material has been stolen so you should call 911 (Should I tell you the number?)).
+The code is commented, so just read it and ask me anything: open an issue, or alternatively, it's not that hard to find my email if you are reading this tutorial on github (unless this material has been stolen and you should call 911 (Should I tell you the number?)).
 
-In the first part are introduce the services implemented and the dependencies you need to satisfy to run them, then 2 sections follow: 'Simple Tutorials' and 'Miscellanea'. The former is a series of 'how to' related to Docker, Mongo etc, while the latter is docker-composed (haha, don't you think this is funny?) by some tips that I learnt during the implementation of the whole stuff.
+In the first part I introduce the services implemented and the dependencies you need to satisfy to run them, while in the second a 'Simple Tutorials' section and 'Miscellanea' section are presented. The former is a series of 'how to' related to Docker, Mongo etc, while the latter is composed by some tips that I learnt during the implementation/integration of whole the stuff.
 
-I've ready some other spin-offs of this tutorial, still I may need some hours of work to make them 'pretty': if I receive messages where I'm asked to do 'x' and 'x' is almost ready, I will add it to this page. The 'almost-pretty' extensions are:
+I've some other material ready for this tutorial, but I may need some hours of work to make it 'pretty-printable': if I receive messages where I'm asked to do 'x' and 'x' is almost ready, I will add it to this page. 
+The 'almost-pretty' extensions are:
 - managing the containers with 'docker-compose' command;
 - managing the whole delivery-deployment process with 'Jenkins';
 - managind the deploy on GCP or other clouds (like IBM Cloud or AWS) with some orchestrator like Kubernetes.
@@ -46,23 +48,23 @@ When one or more dependencies are not satisfied, you can just enter the 'node_mo
 npm install <nome_package>
 ```
 
-The package will be installed in 'node_modules' folder and will be available through the javascript command 'require('<nome_package>')'. You may want to use also the npm option '-g' (global): in that case, read the documentation.
+The package will be installed in 'node_modules' folder and will be available through the javascript command 'require('<nome_package>')'. You may want to use also the npm option '-g' (global): in that case, read the npm documentation.
 
 ### Section 1, Simple Tutorials
-- <a href="#11-creare-un-container-docker-e-far-comunicare-sistema-batch-e-mockup-server-windowslinux">1.1 Create a Docker containers and make them communicate (Windows/Linux)</a>;
-- <a href="#12-gestire-container-senza-docker-compose-linux">1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux)</a>
-- <a href="#13-deploy-dei-container-su-rete-privata-attenzione-binding-dellip-di-mongo-da-settare-su-un-unico-valore">1.3 Deploy on a dedicated Docker network</a>
-- <a href="#14-container-con-servizi-in-massima-affidabilit%C3%A0-max-availability">1.4 Containers in 'max availability mode'</a> 
+- <a href="#11-create-the-docker-containers-and-make-them-communicate-windowslinux">1.1 Create the Docker containers and make them communicate (Windows/Linux)</a>;
+- <a href="#12-manage-containers-importexport-without-orchestrator-andor-docker-compose-linux">1.2 Manage containers (import/export) without orchestrator and/or docker-compose (Linux)</a>
+- <a href="#13-deploy-on-a-dedicated-docker-network">1.3 Deploy on a dedicated Docker network</a>
+- <a href="#14-containers-in-high-availability-mode">1.4 Containers in 'high availability mode'</a> 
 
 ### Sezione 2, Miscellanea
-- <a href="#21-comandi-utili-per-docker">2.1 Useful Docker commands (shell Windows/Linux)</a>;
-- <a href="#22-comandi-mongo-linux-ubuntu">2.2 Useful Mongo commands (shell Linux)</a>
+- <a href="#21-useful-docker-commands-shell-windowslinux">2.1 Useful Docker commands (shell Windows/Linux)</a>;
+- <a href="#22-useful-mongo-commands-shell-linux">2.2 Useful Mongo commands (shell Linux)</a>
 - <a href="#23-troubleshooting">2.3 Troubleshooting</a>.
 
 
 ## 1. Simple Tutorials 
 
-### 1.1 Create a Docker containers and make them communicate (Windows/Linux)
+### 1.1 Create the Docker containers and make them communicate (Windows/Linux)
 Download and install Docker for Windows and/or for Liunx: for the former, you can use the official link (e.g. on Windows 10 go here https://runnable.com/docker/install-docker-on-windows-10), while for Linux you can use your favourite package manager (e.g. on Ubuntu a 'apt-get install docker' is enough), or again install it from source.
 
 Create a 'Dockerfile' (it is a plaintext) with no extension with this content:
@@ -231,21 +233,23 @@ Let's run the images
   ```
 
 
-### 1.4 Containers in 'max availability mode'
-When a service faces an unexpected error, usually it terminates. If we want that the service restarts automatically, we need to use a dedicated service: one of the most used is 'forever'. In order to enable the feature, you have to install 'forever' with npm, and modify the 'package.json' file of the service you want to dockerize, by adding/modifying the section 'scripts' in the following way:
+### 1.4 Containers in 'high availability mode'
+When a node service faces an unexpected error (something you cannot handle with a try-catch), usually it terminates: if you are unlucky, yes, your server terminates. 
+If you want the server restarts automatically, you need to use a dedicated service/daemon that restarts things that break up: one of the most used is 'forever' (there are many others, just google 'node.js restart automatically'). To enable the feature, you have to install 'forever' with npm, and modify the 'package.json' file of the service you want to dockerize, by adding/modifying the section 'scripts' with the following code:
 ```
   "scripts": {
     "start": "forever --minUptime 5000 --spinSleepTime 3000 batch_server.js"
   }
 ```
 
-We have specified that the batch server will be restarted after every 5 seconds if something bad occurs that terminates it. Pretty simple, uh?
-You can use it with every service you want, even the database.
+We have specified that the batch server will be restarted after every 5 seconds if something bad occurs that terminates it. Pretty simple, uh? 
+You can use it with every service you want, even the database. 
+
 
 ## Miscellanea
 
 ### 2.1 Useful Docker commands (shell Windows/Linux)
-Open a shell, make sure Docker is running, and launch one of the following commands:
+Spawn a shell, make sure Docker is running, and launch one of the following commands:
 
 List of Docker images:
 ```
