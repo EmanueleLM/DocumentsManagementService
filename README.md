@@ -65,7 +65,7 @@ The package will be installed in 'node_modules' folder and will be available thr
 ## 1. Simple Tutorials 
 
 ### 1.1 Create the Docker containers and make them communicate (Windows/Linux)
-Download and install Docker for Windows and/or for Liunx: for the former, you can use the official link (e.g. on Windows 10 go here https://runnable.com/docker/install-docker-on-windows-10), while for Linux you can use your favourite package manager (e.g. on Ubuntu a 'apt-get install docker' is enough), or again install it from source.
+Download and install Docker for Windows and/or for Linux: for the former, you can use the official link (e.g. on Windows 10 go here https://runnable.com/docker/install-docker-on-windows-10), while for Linux you can use your favourite package manager (e.g. on Ubuntu a 'apt-get install docker' is enough), or again install it from source.
 
 Create a 'Dockerfile' (it is a plaintext) with no extension with this content:
 ```
@@ -140,7 +140,7 @@ docker build -t external_server .
 docker run -it --rm --name external_server -p 3002:3002 --network host external_server 
 ```
 
-Console 1: move into 'batch_server' folder (cd command):
+Console 2: move into 'batch_server' folder (cd command):
 ```
 docker build -t batch_server .
 docker run -it --rm --name batch_server -p 3001:3001 --network host batch_server 
